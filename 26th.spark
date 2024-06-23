@@ -1,0 +1,37 @@
+import org.apache.spark.sql.SparkSession
+
+object WordCountOperations {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .appName("WordCountOperations")
+      .master("local[*]")
+      .getOrCreate()
+
+    // Load text file into RDD
+    val lines = spark.sparkContext.textFile("words.txt")
+
+    // Split each line into words and flatten into single collection of words
+    val words = lines.flatMap(_.toLowerCase().split("\\W+"))
+
+    // Map each word to (word, 1) and reduce by key to count occurrences
+    val wordCounts = words.map(word => (word, 1)).reduceByKey(_ + _)
+
+    // i) Display word counts
+    println("Word Counts:")
+    wordCounts.collect().foreach(println)
+
+    // ii) Arrange word count in ascending order based on key
+    val sortedWordCounts = wordCounts.sortByKey()
+
+    println("\nWord Counts Sorted by Key:")
+    sortedWordCounts.collect().foreach(println)
+
+    // iii) Display words that begin with 's'
+    val sWords = wordCounts.filter { case (word, _) => word.startsWith("s") }.collect()
+
+    println("\nWords that begin with 's':")
+    sWords.foreach(println)
+
+    spark.stop()
+  }
+}
