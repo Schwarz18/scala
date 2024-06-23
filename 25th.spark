@@ -1,0 +1,38 @@
+import org.apache.spark.sql.SparkSession
+
+object PartitionedItemProcessing {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .appName("PartitionedItemProcessing")
+      .master("local[*]")
+      .getOrCreate()
+
+    // Sample partitioned Item data
+    val partition1 = Seq(("Ball", 10), ("Ribbon", 50), ("Box", 20))
+    val partition2 = Seq(("Pen", 5), ("Book", 8))
+    val partition3 = Seq(("Dairy", 4), ("Pin", 20))
+
+    // Convert partitions to RDDs
+    val rdd1 = spark.sparkContext.parallelize(partition1)
+    val rdd2 = spark.sparkContext.parallelize(partition2)
+    val rdd3 = spark.sparkContext.parallelize(partition3)
+
+    // Union RDDs
+    val unionRDD = spark.sparkContext.union(Seq(rdd1, rdd2, rdd3))
+
+    // i. Find how many partitions are created
+    println(s"Number of partitions: ${unionRDD.getNumPartitions}")
+
+    // ii. Display content of the RDD
+    println("\nContent of RDD:")
+    unionRDD.foreach(println)
+
+    // iii. Display content of each partition separately
+    println("\nContent of each partition:")
+    unionRDD.glom().collect().zipWithIndex.foreach { case (part, index) =>
+      println(s"Partition $index: ${part.mkString(", ")}")
+    }
+
+    spark.stop()
+  }
+}
