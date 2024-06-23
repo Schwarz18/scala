@@ -1,0 +1,35 @@
+import org.apache.spark.sql.SparkSession
+
+object ItemOperations {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .appName("ItemOperations")
+      .master("local[*]")
+      .getOrCreate()
+
+    val sc = spark.sparkContext
+
+    var items = sc.parallelize(Seq(("Pen", 20), ("Pencil", 10), ("Eraser", 7), ("Book", 25), ("Sheet", 15)))
+
+    // i. Display item-name and quantity
+    items.collect().foreach{ case (item, qty) => println(s"$item: $qty") }
+
+    // ii. Display sum of quantity and total number of items
+    val totalQuantity = items.map(_._2).sum()
+    val totalItems = items.count()
+    println(s"Total quantity: $totalQuantity, Total items: $totalItems")
+
+    // iii. Add 3 Books to the collection
+    items = items.map { case (item, qty) =>
+      if (item == "Book") (item, qty + 3) else (item, qty)
+    }
+
+    // iv. Add new item "Board" with quantity 15 to the collection
+    items = items.union(sc.parallelize(Seq(("Board", 15))))
+
+    // Display updated collection
+    items.collect().foreach{ case (item, qty) => println(s"$item: $qty") }
+
+    spark.stop()
+  }
+}
