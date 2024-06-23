@@ -1,0 +1,27 @@
+import org.apache.spark.{SparkConf, SparkContext}
+
+object CombineByKeyExample {
+  def main(args: Array[String]): Unit = {
+    val conf = new SparkConf().setAppName("CombineByKeyExample").setMaster("local[*]")
+    val sc = new SparkContext(conf)
+
+    // Input data
+    val data = Seq(("coffee", 2), ("cappuccino", 5), ("tea", 3), ("coffee", 10), ("cappuccino", 15))
+
+    // Create RDD
+    val rdd = sc.parallelize(data)
+
+    // Apply combineByKey
+    val combinedRDD = rdd.combineByKey(
+      (value: Int) => value, // createCombiner: initialize count
+      (acc: Int, value: Int) => acc + value, // mergeValue: sum values
+      (acc1: Int, acc2: Int) => acc1 + acc2 // mergeCombiners: combine partition sums
+    )
+
+    // Output result
+    println("Combined Results:")
+    combinedRDD.collect().foreach(println)
+
+    sc.stop()
+  }
+}
