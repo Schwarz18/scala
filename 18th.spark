@@ -1,0 +1,21 @@
+import org.apache.spark.sql.SparkSession
+
+object TopTweeters {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .appName("TopTweeters")
+      .master("local[*]")
+      .getOrCreate()
+
+    // Read JSON file into DataFrame
+    val tweetsDF = spark.read.json("reduced-tweets.json")
+
+    // Group by user and count occurrences, then select top 10
+    val topTweeters = tweetsDF.groupBy("user").count().orderBy($"count".desc).limit(10)
+
+    // Show the top tweeters
+    topTweeters.show()
+
+    spark.stop()
+  }
+}
