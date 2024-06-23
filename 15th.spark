@@ -1,0 +1,27 @@
+import org.apache.spark.{SparkConf, SparkContext}
+
+object FoldAndAggregateExample {
+  def main(args: Array[String]): Unit = {
+    val conf = new SparkConf().setAppName("Fold and Aggregate Example").setMaster("local[*]")
+    val sc = new SparkContext(conf)
+    
+    // Create an RDD of integers
+    val data = sc.parallelize(1 to 10)
+    
+    // Function to add 100 to each element using fold
+    val resultFold = data.fold(0)((acc, x) => acc + x + 100)
+    
+    // Function to add 100 to each element using aggregate
+    val seqOp = (acc: Int, x: Int) => acc + x + 100
+    val combOp = (acc1: Int, acc2: Int) => acc1 + acc2
+    val resultAggregate = data.aggregate(0)(seqOp, combOp)
+    
+    println("Result using fold:")
+    println(resultFold)
+    
+    println("Result using aggregate:")
+    println(resultAggregate)
+    
+    sc.stop()
+  }
+}
