@@ -1,0 +1,38 @@
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkConf, SparkContext}
+
+object AverageMarks {
+  def main(args: Array[String]): Unit = {
+    val conf = new SparkConf().setAppName("AverageMarks").setMaster("local[*]")
+    val sc = new SparkContext(conf)
+
+    // Sample input format: Array( ("Joe", "Maths", 83), ("Joe", "Physics", 74), ...)
+    val input = Array(
+      ("Joe", "Maths", 83), ("Joe", "Physics", 74), ("Joe", "Chemistry", 91),
+      ("Joe", "Biology", 82), ("Nik", "Maths", 69), ("Nik", "Physics", 62),
+      ("Nik", "Chemistry", 97), ("Nik", "Biology", 80)
+    )
+
+    // Create RDD from input
+    val marksRDD: RDD[(String, (Int, Int))] = sc.parallelize(input).map {
+      case (name, subject, marks) => (name, (marks, 1))
+    }
+
+    // Combine by key to calculate sum and count for each student
+    val sumCountRDD = marksRDD.combineByKey(
+      (marks: Int) => (marks, 1),
+      (acc: (Int, Int), marks: Int) => (acc._1 + marks, acc._2 + 1),
+      (acc1: (Int, Int), acc2: (Int, Int)) => (acc1._1 + acc2._1, acc1._2 + acc2._2)
+    )
+
+    // Calculate average marks
+    val averageMarksRDD = sumCountRDD.mapValues { case (sum, count) => sum.toDouble / count }
+
+    // Display result
+    averageMarksRDD.collect().foreach { case (name, avg) =>
+      println(s"Average marks of $name: $avg")
+    }
+
+    sc.stop()
+  }
+}
