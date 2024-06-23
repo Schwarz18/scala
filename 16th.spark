@@ -1,0 +1,30 @@
+import org.apache.spark.{SparkConf, SparkContext}
+
+object WordCount {
+  def main(args: Array[String]): Unit = {
+    val conf = new SparkConf().setAppName("WordCount").setMaster("local[*]")
+    val sc = new SparkContext(conf)
+
+    // Read text file into RDD of lines
+    val lines = sc.textFile("text.txt")
+
+    // Split each line into words, flatten the list of words
+    val words = lines.flatMap(_.split("\\s+"))
+
+    // Map each word to (word, 1) and then reduce by key to count occurrences
+    val wordCounts = words.map(word => (word, 1)).reduceByKey(_ + _)
+
+    // Filter words which appear more than 4 times
+    val wordsMoreThan4Times = wordCounts.filter(_._2 > 4).collect()
+
+    // Save result to a file
+    wordCounts.saveAsTextFile("wordCounts")
+
+    // Display words which appear more than 4 times
+    wordsMoreThan4Times.foreach { case (word, count) =>
+      println(s"$word appears $count times")
+    }
+
+    sc.stop()
+  }
+}
